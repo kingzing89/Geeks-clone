@@ -1,277 +1,381 @@
 // app/category/[slug]/page.tsx
-import { notFound } from 'next/navigation';
+import { notFound } from "next/navigation";
+import Link from "next/link";
+// Types based on your Category model
+interface CategoryData {
+  _id: string;
+  title: string;
+  slug: string;
+  description?: string;
+  content?: string;
+  bgColor?: string;
+  icon?: string;
+  order?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-// Static data - replace this with API call later
-const getCategoryData = (slug: string) => {
-  const categoryData: Record<string, any> = {
-    'algorithms': {
-      title: 'Algorithms',
-      description: 'Master the art of problem-solving with our comprehensive algorithm tutorials',
-      content: `Algorithms are step-by-step procedures or formulas for solving problems. They are fundamental to computer science and programming, providing efficient solutions to complex computational challenges.
+// API function to fetch category data
+const getCategoryData = async (slug: string): Promise<CategoryData | null> => {
+  try {
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    console.log("Fetching category with slug:", slug);
 
-      Key concepts in algorithms include:
+    // First try to get all categories and find by slug
+    const allCategoriesResponse = await fetch(`${baseUrl}/api/categories`, {
+      next: { revalidate: 3600 },
+    });
 
-      • Time and Space Complexity: Understanding how algorithms perform with different input sizes using Big O notation
-      • Sorting Algorithms: Bubble sort, merge sort, quicksort, and their trade-offs
-      • Searching Algorithms: Linear search, binary search, and hash-based searching
-      • Dynamic Programming: Breaking down complex problems into simpler subproblems
-      • Greedy Algorithms: Making locally optimal choices to find global solutions
-      • Graph Algorithms: Traversal methods like BFS and DFS, shortest path algorithms
-      • Divide and Conquer: Recursive problem-solving approach
-      • Recursion: Functions that call themselves to solve problems
+    if (allCategoriesResponse.ok) {
+      const allCategoriesData = await allCategoriesResponse.json();
 
-      Mastering algorithms helps developers write more efficient code, optimize performance, and solve complex problems systematically. They form the foundation of competitive programming and technical interviews at major tech companies.`
-    },
-    'data-structures': {
-      title: 'Data Structures',
-      description: 'Build a solid foundation with essential data structures',
-      content: `Data structures are ways of organizing and storing data to enable efficient access and modification. They are crucial for writing efficient algorithms and building scalable applications.
+      if (allCategoriesData.success && allCategoriesData.data) {
+        const category = allCategoriesData.data.find((cat: any) => {
+          return cat.slug === slug;
+        });
 
-      Fundamental data structures include:
-
-      • Arrays: Fixed-size sequential collection of elements of the same type
-      • Linked Lists: Dynamic data structure with nodes containing data and pointers
-      • Stacks: Last-In-First-Out (LIFO) data structure for managing function calls and operations
-      • Queues: First-In-First-Out (FIFO) data structure for scheduling and buffering
-      • Trees: Hierarchical data structure with nodes and parent-child relationships
-      • Binary Search Trees: Ordered tree structure for efficient searching and sorting
-      • Hash Tables: Key-value pairs with fast insertion, deletion, and lookup operations
-      • Heaps: Complete binary trees used for priority queues and heap sort
-      • Graphs: Collection of vertices connected by edges for modeling relationships
-
-      Understanding when and how to use different data structures is essential for optimizing program performance and memory usage. Each structure has specific advantages and trade-offs in terms of time and space complexity.`
-    },
-    'machine-learning': {
-      title: 'Machine Learning',
-      description: 'Dive into AI and ML algorithms with hands-on projects',
-      content: `Machine Learning is a subset of artificial intelligence that enables computers to learn and make decisions from data without being explicitly programmed for every task.
-
-      Core machine learning concepts:
-
-      • Supervised Learning: Training models with labeled data (classification and regression)
-      • Unsupervised Learning: Finding patterns in unlabeled data (clustering and dimensionality reduction)
-      • Reinforcement Learning: Learning through interaction with an environment using rewards and penalties
-      • Neural Networks: Interconnected nodes that mimic the human brain's structure
-      • Deep Learning: Multi-layered neural networks for complex pattern recognition
-      • Feature Engineering: Selecting and transforming input variables for better model performance
-      • Model Evaluation: Using metrics like accuracy, precision, recall, and F1-score
-      • Overfitting and Underfitting: Balancing model complexity and generalization
-      • Cross-validation: Techniques for assessing model performance on unseen data
-
-      Popular algorithms include linear regression, decision trees, random forests, support vector machines, k-means clustering, and convolutional neural networks. ML is applied in computer vision, natural language processing, recommendation systems, and autonomous systems.`
-    },
-    'web-development': {
-      title: 'Web Development',
-      description: 'Create modern web applications with cutting-edge technologies',
-      content: `Web Development encompasses creating websites and web applications that run in browsers or on web servers. It involves both frontend (client-side) and backend (server-side) development.
-
-      Frontend Development focuses on:
-
-      • HTML: Structure and content markup language
-      • CSS: Styling, layout, and responsive design
-      • JavaScript: Interactive functionality and dynamic behavior
-      • Modern Frameworks: React, Vue.js, Angular for building user interfaces
-      • CSS Preprocessors: Sass, Less for enhanced styling capabilities
-      • Build Tools: Webpack, Vite for bundling and optimizing code
-      • Version Control: Git for tracking changes and collaboration
-
-      Backend Development includes:
-
-      • Server Languages: Node.js, Python, Java, PHP for server-side logic
-      • Databases: SQL (MySQL, PostgreSQL) and NoSQL (MongoDB, Redis) databases
-      • APIs: REST and GraphQL for data communication
-      • Authentication: User login, session management, and security
-      • Cloud Services: AWS, Azure, Google Cloud for hosting and scaling
-      • DevOps: CI/CD pipelines, containerization with Docker
-
-      Modern web development emphasizes responsive design, performance optimization, accessibility, and security best practices.`
-    },
-    'system-design': {
-      title: 'System Design',
-      description: 'Learn to design scalable and reliable distributed systems',
-      content: `System Design is the process of architecting large-scale distributed systems that can handle millions of users and massive amounts of data efficiently and reliably.
-
-      Key system design principles:
-
-      • Scalability: Horizontal vs vertical scaling strategies
-      • Reliability: Fault tolerance, redundancy, and disaster recovery
-      • Availability: Ensuring systems remain operational with minimal downtime
-      • Consistency: Data consistency models in distributed systems
-      • Partition Tolerance: Handling network failures gracefully
-      • Load Balancing: Distributing traffic across multiple servers
-      • Caching: Redis, Memcached, CDNs for improved performance
-      • Database Design: SQL vs NoSQL, sharding, replication strategies
-      • Microservices: Breaking monoliths into smaller, independent services
-      • Message Queues: Asynchronous communication between services
-      • API Design: REST, GraphQL, and API versioning strategies
-      • Monitoring: Logging, metrics, and alerting systems
-
-      System design interviews are common at tech companies and focus on designing systems like social media platforms, chat applications, URL shorteners, and streaming services. The goal is to create systems that are scalable, maintainable, and cost-effective.`
-    },
-    'programming': {
-      title: 'Programming',
-      description: 'Master programming fundamentals and best practices',
-      content: `Programming is the process of creating instructions for computers to execute. It involves problem-solving, logical thinking, and translating ideas into code using various programming languages.
-
-      Core programming concepts:
-
-      • Variables and Data Types: Storing and manipulating different kinds of information
-      • Control Structures: If statements, loops, and conditional logic
-      • Functions: Reusable blocks of code that perform specific tasks
-      • Object-Oriented Programming: Classes, objects, inheritance, and polymorphism
-      • Error Handling: Try-catch blocks and defensive programming techniques
-      • Debugging: Identifying and fixing code issues systematically
-      • Testing: Unit tests, integration tests, and test-driven development
-      • Code Organization: Modules, packages, and clean code principles
-      • Version Control: Git workflow and collaborative development
-
-      Popular programming languages:
-
-      • Python: Beginner-friendly, great for data science and web development
-      • JavaScript: Essential for web development and increasingly popular for backend
-      • Java: Enterprise applications and Android development
-      • C++: System programming and performance-critical applications
-      • Go: Modern language for concurrent and networked applications
-      • Rust: Memory-safe systems programming
-
-      Good programming practices include writing readable code, following naming conventions, commenting appropriately, and continuously refactoring to improve code quality.`
-    },
-    'devops': {
-      title: 'DevOps',
-      description: 'Automate and streamline software development workflows',
-      content: `DevOps is a culture and set of practices that combines software development (Dev) and IT operations (Ops) to shorten development cycles, increase deployment frequency, and deliver high-quality software reliably.
-
-      Core DevOps practices:
-
-      • Continuous Integration (CI): Automatically building and testing code changes
-      • Continuous Deployment (CD): Automating the release process to production
-      • Infrastructure as Code (IaC): Managing infrastructure through code and version control
-      • Containerization: Docker for consistent environments across development and production
-      • Orchestration: Kubernetes for managing containerized applications at scale
-      • Monitoring and Logging: Tracking application performance and system health
-      • Configuration Management: Tools like Ansible, Chef, and Puppet for system configuration
-      • Cloud Platforms: AWS, Azure, Google Cloud for scalable infrastructure
-      • Security Integration: DevSecOps practices for building security into the pipeline
-
-      Popular DevOps tools:
-
-      • Version Control: Git, GitHub, GitLab
-      • CI/CD: Jenkins, GitHub Actions, GitLab CI, CircleCI
-      • Containers: Docker, Podman
-      • Orchestration: Kubernetes, Docker Swarm
-      • Monitoring: Prometheus, Grafana, ELK Stack
-      • Cloud: AWS, Azure, GCP services and tools
-
-      DevOps emphasizes collaboration, automation, and continuous improvement to deliver software faster while maintaining quality and reliability.`
-    },
-    'courses': {
-      title: 'All Courses',
-      description: 'Browse our complete catalog of programming courses',
-      content: `Our comprehensive course catalog covers all aspects of modern software development, from fundamental programming concepts to advanced system architecture and emerging technologies.
-
-      Course categories include:
-
-      • Beginner-Friendly Programming: Start your coding journey with Python, JavaScript, or Java
-      • Web Development: Full-stack development with modern frameworks and tools
-      • Mobile Development: iOS with Swift, Android with Kotlin, and cross-platform solutions
-      • Data Science & AI: Machine learning, data analysis, and artificial intelligence
-      • Cloud & DevOps: Modern deployment, scaling, and infrastructure management
-      • System Design: Architecture patterns for large-scale applications
-      • Database Management: SQL, NoSQL, and data modeling best practices
-      • Cybersecurity: Secure coding practices and application security
-      • Game Development: Creating games with various engines and languages
-      • Blockchain & Cryptocurrency: Distributed ledger technologies and smart contracts
-
-      Each course includes:
-
-      • Hands-on projects and real-world applications
-      • Interactive coding exercises and challenges
-      • Industry-relevant case studies and examples
-      • Community support and peer learning opportunities
-      • Certificates of completion and portfolio projects
-      • Updated content reflecting current industry standards
-
-      Whether you're a complete beginner or an experienced developer looking to expand your skills, our courses provide structured learning paths with practical applications and industry insights.`
+        if (category) {
+          return {
+            _id: category._id,
+            title: category.title || category.name,
+            slug: category.slug,
+            description: category.description,
+            content: category.content,
+            bgColor: category.bgColor,
+            icon: category.icon,
+            order: category.order,
+            createdAt: category.createdAt
+              ? new Date(category.createdAt)
+              : new Date(),
+            updatedAt: category.updatedAt
+              ? new Date(category.updatedAt)
+              : new Date(),
+          };
+        }
+      }
     }
-  };
 
-  return categoryData[slug] || null;
-};
+    // Fallback: Try the direct endpoint
+    const response = await fetch(`${baseUrl}/api/categories/${slug}`, {
+      next: { revalidate: 3600 },
+    });
 
-const getDifficultyColor = (difficulty: string) => {
-  switch (difficulty.toLowerCase()) {
-    case 'beginner':
-      return 'bg-green-100 text-green-800';
-    case 'intermediate':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'advanced':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null;
+      }
+      throw new Error(`Failed to fetch category: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const categoryData = data.data || data;
+
+    return {
+      _id: categoryData._id,
+      title: categoryData.title,
+      slug: categoryData.slug,
+      description: categoryData.description,
+      content: categoryData.content,
+      bgColor: categoryData.bgColor,
+      icon: categoryData.icon,
+      order: categoryData.order,
+      createdAt: categoryData.createdAt
+        ? new Date(categoryData.createdAt)
+        : new Date(),
+      updatedAt: categoryData.updatedAt
+        ? new Date(categoryData.updatedAt)
+        : new Date(),
+    };
+  } catch (error) {
+    console.error("Error fetching category data:", error);
+    return null;
   }
 };
 
-export default function CategoryPage({ params }: { params: { slug: string } }) {
-  const categoryData = getCategoryData(params.slug);
+// Function to parse content and handle different formats
+const parseContent = (content?: string) => {
+  if (!content) return null;
+
+  const paragraphs = content.split("\n").filter((p) => p.trim());
+
+  return paragraphs.map((paragraph: string, index: number) => {
+    const trimmed = paragraph.trim();
+    if (!trimmed) return null;
+
+    if (trimmed.startsWith("•") || trimmed.startsWith("-")) {
+      return (
+        <div key={index} className="flex items-start mb-3">
+          <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+          <p className="text-gray-700 leading-relaxed">
+            {trimmed.substring(1).trim()}
+          </p>
+        </div>
+      );
+    }
+
+    if (trimmed.endsWith(":")) {
+      return (
+        <h3
+          key={index}
+          className="text-lg font-semibold text-gray-900 mt-6 mb-3"
+        >
+          {trimmed.slice(0, -1)}
+        </h3>
+      );
+    }
+
+    return (
+      <p key={index} className="mb-3 leading-relaxed text-gray-700">
+        {trimmed}
+      </p>
+    );
+  });
+};
+
+// Helper function to get proper background color class for admin panel colors
+const getBgColorClass = (bgColor?: string) => {
+  // Map admin panel color values to hero section gradients (darker for better text contrast)
+  const adminColorMap: { [key: string]: string } = {
+    LightBlue: "bg-gradient-to-r from-sky-500 to-blue-600",
+    SoftGreen: "bg-gradient-to-r from-green-500 to-emerald-600",
+    PaleRose: "bg-gradient-to-r from-rose-500 to-pink-600",
+    LavenderGray: "bg-gradient-to-r from-slate-500 to-purple-600",
+    WarmBeige: "bg-gradient-to-r from-amber-500 to-yellow-600",
+    SoftPink: "bg-gradient-to-r from-pink-500 to-rose-600",
+    PaleIndigo: "bg-gradient-to-r from-indigo-500 to-violet-600",
+    MintGreen: "bg-gradient-to-r from-teal-500 to-cyan-600",
+    Peach: "bg-gradient-to-r from-orange-500 to-amber-600",
+    SoftTeal: "bg-gradient-to-r from-teal-500 to-cyan-600",
+  };
+
+  // Return the mapping if bgColor exists, otherwise return default
+  if (bgColor && adminColorMap[bgColor]) {
+    return adminColorMap[bgColor];
+  }
+
+  // Default fallback
+  return "bg-gradient-to-r from-gray-500 to-slate-600";
+};
+
+// Helper function to get complementary sidebar color
+const getSidebarAccentColor = (bgColor?: string) => {
+  const sidebarColorMap: { [key: string]: string } = {
+    LightBlue: "from-sky-50 to-blue-100 border-sky-200",
+    SoftGreen: "from-green-50 to-emerald-100 border-green-200",
+    PaleRose: "from-rose-50 to-pink-100 border-rose-200",
+    LavenderGray: "from-slate-50 to-purple-100 border-slate-200",
+    WarmBeige: "from-amber-50 to-yellow-100 border-amber-200",
+    SoftPink: "from-pink-50 to-rose-100 border-pink-200",
+    PaleIndigo: "from-indigo-50 to-violet-100 border-indigo-200",
+    MintGreen: "from-teal-50 to-cyan-100 border-teal-200",
+    Peach: "from-orange-50 to-amber-100 border-orange-200",
+    SoftTeal: "from-teal-50 to-cyan-100 border-teal-200",
+  };
+
+  if (bgColor && sidebarColorMap[bgColor]) {
+    return sidebarColorMap[bgColor];
+  }
+
+  return "from-blue-50 to-indigo-100 border-blue-200";
+};
+
+// Helper function to get button color
+const getButtonColor = (bgColor?: string) => {
+  const buttonColorMap: { [key: string]: string } = {
+    LightBlue: "from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700",
+    SoftGreen:
+      "from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700",
+    PaleRose: "from-rose-600 to-pink-600 hover:from-rose-700 hover:to-pink-700",
+    LavenderGray:
+      "from-slate-600 to-purple-600 hover:from-slate-700 hover:to-purple-700",
+    WarmBeige:
+      "from-amber-600 to-yellow-600 hover:from-amber-700 hover:to-yellow-700",
+    SoftPink: "from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700",
+    PaleIndigo:
+      "from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700",
+    MintGreen:
+      "from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700",
+    Peach:
+      "from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700",
+    SoftTeal: "from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700",
+  };
+
+  if (bgColor && buttonColorMap[bgColor]) {
+    return buttonColorMap[bgColor];
+  }
+
+  return "from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700";
+};
+
+export default async function CategoryPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const categoryData = await getCategoryData(params.slug);
 
   if (!categoryData) {
     notFound();
   }
 
+  const hasContent = categoryData.content && categoryData.content.trim();
+  const bgColorClass = getBgColorClass(categoryData.bgColor);
+  const sidebarAccentColor = getSidebarAccentColor(categoryData.bgColor);
+  const buttonColor = getButtonColor(categoryData.bgColor);
+
+  console.log("bg color class", bgColorClass);
+  console.log("admin panel color", categoryData.bgColor);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-700 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold mb-4">{categoryData.title}</h1>
-            <p className="text-xl text-blue-100 mb-8">{categoryData.description}</p>
+      <div className={`${bgColorClass} text-white`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div
+            className={`max-w-4xl ${
+              categoryData.description ? "py-16" : "py-12"
+            }`}
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <h1 className="text-3xl md:text-4xl font-bold text-white">
+                {categoryData.title}
+              </h1>
+            </div>
+
+            {categoryData.description && (
+              <p className="text-lg md:text-xl text-white/90 leading-relaxed">
+                {categoryData.description}
+              </p>
+            )}
           </div>
         </div>
       </div>
 
       {/* Content Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">About {categoryData.title}</h2>
-          <div className="prose prose-lg max-w-none text-gray-700">
-            {categoryData.content.split('\n').map((paragraph: string, index: number) => {
-              const trimmed = paragraph.trim();
-              if (!trimmed) return null;
-              
-              if (trimmed.startsWith('•')) {
-                return (
-                  <div key={index} className="flex items-start mb-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                    <p className="text-gray-700 leading-relaxed">{trimmed.substring(1).trim()}</p>
-                  </div>
-                );
-              }
-              
-              return (
-                <p key={index} className="mb-4 leading-relaxed text-gray-700">
-                  {trimmed}
-                </p>
-              );
-            })}
-          </div>
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-3 order-2 lg:order-1">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">
+                About {categoryData.title}
+              </h2>
 
-        {/* Call to Action */}
-        <div className="text-center mt-12">
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-8 border border-blue-100">
-            <h3 className="text-2xl font-semibold text-gray-900 mb-4">
-              Ready to dive deeper into {categoryData.title}?
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Explore our comprehensive courses and start your learning journey today.
-            </p>
-            <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors font-medium">
-              Browse Courses
-            </button>
+              {hasContent ? (
+                <div className="prose prose-gray max-w-none">
+                  {parseContent(categoryData.content)}
+                </div>
+              ) : (
+                <p className="text-gray-600 leading-relaxed">
+                  Learn more about {categoryData.title} and enhance your
+                  programming skills.
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="lg:col-span-1 order-1 lg:order-2">
+            <div className="space-y-6">
+              {/* Category Info Card */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Category Info
+                </h3>
+
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Created:</span>
+                    <span className="font-medium text-gray-900">
+                      {new Date(categoryData.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Updated:</span>
+                    <span className="font-medium text-gray-900">
+                      {new Date(categoryData.updatedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  {categoryData.order !== undefined && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Order:</span>
+                      <span className="font-medium text-gray-900">
+                        #{categoryData.order}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Call to Action Card with matching colors */}
+              <div
+                className={`bg-gradient-to-br ${sidebarAccentColor} rounded-xl p-6 border`}
+              >
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Ready to explore {categoryData.title}?
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                    Start your learning journey with comprehensive courses and
+                    tutorials.
+                  </p>
+                  <Link
+                    href="/courses"
+                    className={`w-full bg-gradient-to-r ${buttonColor} text-white px-4 py-2.5 rounded-lg transition-all duration-200 font-medium text-sm block text-center`}
+                  >
+                    Browse Courses
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+// Generate static params for better SEO
+export async function generateStaticParams() {
+  try {
+    const baseUrl = "http://localhost:3000";
+    const response = await fetch(`${baseUrl}/api/categories`);
+    const apiResponse = await response.json();
+
+    if (apiResponse.success && apiResponse.data) {
+      return apiResponse.data.map((category: any) => ({
+        slug: category.slug,
+      }));
+    }
+
+    return [];
+  } catch (error) {
+    console.error("Error generating static params:", error);
+    return [];
+  }
+}
+
+// Metadata generation for SEO
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const categoryData = await getCategoryData(params.slug);
+
+  if (!categoryData) {
+    return {
+      title: "Category Not Found",
+      description: "The requested category could not be found.",
+    };
+  }
+
+  return {
+    title: `${categoryData.title} | Learn Programming`,
+    description:
+      categoryData.description ||
+      `Learn about ${categoryData.title} with comprehensive tutorials and courses.`,
+  };
 }

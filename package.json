@@ -9,10 +9,21 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@stripe/stripe-js": "^7.9.0",
+    "@types/bcryptjs": "^3.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/mongoose": "^5.11.97",
+    "@types/stripe": "^8.0.417",
+    "bcryptjs": "^3.0.2",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.540.0",
+    "mongoose": "^8.18.1",
     "next": "15.5.0",
+    "next-auth": "^4.24.11",
+    "puppeteer": "^24.21.0",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "stripe": "^18.5.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

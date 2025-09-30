@@ -103,7 +103,7 @@ const Explore: React.FC<ExploreProps> = ({ categories = [] }) => {
 
   // Don't render anything if no categories
   if (categories.length === 0) {
-    return null;
+    return <h1 className="text-3xl font-bold text-gray-800 mb-8 ml-12">Explore</h1>;
   }
 
   return (

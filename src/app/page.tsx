@@ -112,17 +112,17 @@ export default function HomePage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // Static fallback categories
-  const fallbackCategories: CategoryData[] = [
-    { title: 'Algorithms', icon: Code, slug: 'algorithms' },
-    { title: 'Data Structures', icon: Database, slug: 'data-structures' },
-    { title: 'Machine Learning', icon: Brain, slug: 'machine-learning' },
-    { title: 'Web Development', icon: Globe, slug: 'web-development' },
-    { title: 'System Design', icon: Server, slug: 'system-design' },
-    { title: 'Programming', icon: Laptop, slug: 'programming' },
-    { title: 'DevOps', icon: Users, slug: 'devops' },
-    { title: 'Courses', icon: BookOpen, slug: 'courses' }
-  ];
+  // // Static fallback categories
+  // const fallbackCategories: CategoryData[] = [
+  //   { title: 'Algorithms', icon: Code, slug: 'algorithms' },
+  //   { title: 'Data Structures', icon: Database, slug: 'data-structures' },
+  //   { title: 'Machine Learning', icon: Brain, slug: 'machine-learning' },
+  //   { title: 'Web Development', icon: Globe, slug: 'web-development' },
+  //   { title: 'System Design', icon: Server, slug: 'system-design' },
+  //   { title: 'Programming', icon: Laptop, slug: 'programming' },
+  //   { title: 'DevOps', icon: Users, slug: 'devops' },
+  //   { title: 'Courses', icon: BookOpen, slug: 'courses' }
+  // ];
 
 
   // Debounced search function
@@ -216,14 +216,11 @@ export default function HomePage() {
             bgColor: category.bgColor
           }));
           setCategories(mappedCategories);
-        } else {
-          setCategories(fallbackCategories);
-        }
+        } 
       } catch (err) {
         console.error('Failed to fetch categories:', err);
         const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
         setError(errorMessage);
-        setCategories(fallbackCategories);
       } finally {
         setLoading(false);
       }

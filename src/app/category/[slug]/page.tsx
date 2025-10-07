@@ -1,6 +1,10 @@
 // app/category/[slug]/page.tsx
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Category from "../../../models/Category";
+import dbConnect from '@/lib/mongodb';
+
+
 // Types based on your Category model
 interface CategoryData {
   _id: string;
@@ -16,75 +20,29 @@ interface CategoryData {
 }
 
 // API function to fetch category data
+// API function to fetch category data
 const getCategoryData = async (slug: string): Promise<CategoryData | null> => {
   try {
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    await dbConnect();
     console.log("Fetching category with slug:", slug);
 
-    // First try to get all categories and find by slug
-    const allCategoriesResponse = await fetch(`${baseUrl}/api/categories`, {
-      next: { revalidate: 3600 },
-    });
+    const category = await Category.findOne({ slug }).lean();
 
-    if (allCategoriesResponse.ok) {
-      const allCategoriesData = await allCategoriesResponse.json();
-
-      if (allCategoriesData.success && allCategoriesData.data) {
-        const category = allCategoriesData.data.find((cat: any) => {
-          return cat.slug === slug;
-        });
-
-        if (category) {
-          return {
-            _id: category._id,
-            title: category.title || category.name,
-            slug: category.slug,
-            description: category.description,
-            content: category.content,
-            bgColor: category.bgColor,
-            icon: category.icon,
-            order: category.order,
-            createdAt: category.createdAt
-              ? new Date(category.createdAt)
-              : new Date(),
-            updatedAt: category.updatedAt
-              ? new Date(category.updatedAt)
-              : new Date(),
-          };
-        }
-      }
+    if (!category) {
+      return null;
     }
-
-    // Fallback: Try the direct endpoint
-    const response = await fetch(`${baseUrl}/api/categories/${slug}`, {
-      next: { revalidate: 3600 },
-    });
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        return null;
-      }
-      throw new Error(`Failed to fetch category: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    const categoryData = data.data || data;
 
     return {
-      _id: categoryData._id,
-      title: categoryData.title,
-      slug: categoryData.slug,
-      description: categoryData.description,
-      content: categoryData.content,
-      bgColor: categoryData.bgColor,
-      icon: categoryData.icon,
-      order: categoryData.order,
-      createdAt: categoryData.createdAt
-        ? new Date(categoryData.createdAt)
-        : new Date(),
-      updatedAt: categoryData.updatedAt
-        ? new Date(categoryData.updatedAt)
-        : new Date(),
+      _id: category._id.toString(),
+      title: category.title || "Category Not Found",
+      slug: category.slug,
+      description: category.description,
+      content: category.content,
+      bgColor: category.bgColor,
+      icon: category.icon,
+      order: category.order,
+      createdAt: category.createdAt || new Date(),
+      updatedAt: category.updatedAt || new Date(),
     };
   } catch (error) {
     console.error("Error fetching category data:", error);
@@ -340,23 +298,20 @@ export default async function CategoryPage({
 // Generate static params for better SEO
 export async function generateStaticParams() {
   try {
-    const baseUrl = "http://localhost:3000";
-    const response = await fetch(`${baseUrl}/api/categories`);
-    const apiResponse = await response.json();
-
-    if (apiResponse.success && apiResponse.data) {
-      return apiResponse.data.map((category: any) => ({
-        slug: category.slug,
-      }));
-    }
-
-    return [];
+    await dbConnect();
+    const categories = await Category.find({}).select('slug').lean();
+    
+    return categories.map((category) => ({
+      slug: category.slug,
+    }));
   } catch (error) {
     console.error("Error generating static params:", error);
     return [];
   }
 }
 
+
+// Metadata generation for SEO
 // Metadata generation for SEO
 export async function generateMetadata({
   params,

@@ -1,10 +1,8 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IPurchase extends Document {
+export interface ICoursePurchase extends Document {
   userId: mongoose.Types.ObjectId;
-  documentId?: mongoose.Types.ObjectId;
-  courseId?: mongoose.Types.ObjectId;
-  resourceType: 'document' | 'course';
+  courseId: mongoose.Types.ObjectId;
   stripeSessionId?: string;
   stripePaymentIntentId?: string;
   amount: number;
@@ -15,25 +13,15 @@ export interface IPurchase extends Document {
   updatedAt: Date;
 }
 
-const PurchaseSchema = new Schema<IPurchase>({
+const CoursePurchaseSchema = new Schema<ICoursePurchase>({
   userId: {
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true,
   },
-  documentId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Documentation',
-    required: false,
-  },
   courseId: {
     type: Schema.Types.ObjectId,
     ref: 'Course',
-    required: false,
-  },
-  resourceType: {
-    type: String,
-    enum: ['document', 'course'],
     required: true,
   },
   stripeSessionId: {
@@ -65,14 +53,9 @@ const PurchaseSchema = new Schema<IPurchase>({
   timestamps: true,
 });
 
-// Create compound indexes to prevent duplicate purchases per resource type
-PurchaseSchema.index(
-  { userId: 1, documentId: 1 },
-  { unique: true, partialFilterExpression: { documentId: { $exists: true } } }
-);
-PurchaseSchema.index(
-  { userId: 1, courseId: 1 },
-  { unique: true, partialFilterExpression: { courseId: { $exists: true } } }
-);
+// Prevent duplicate course purchases per user
+CoursePurchaseSchema.index({ userId: 1, courseId: 1 }, { unique: true });
 
-export const Purchase = mongoose.models.Purchase || mongoose.model<IPurchase>('Purchase', PurchaseSchema);
+export const CoursePurchase = mongoose.models.CoursePurchase || mongoose.model<ICoursePurchase>('CoursePurchase', CoursePurchaseSchema);
+
+

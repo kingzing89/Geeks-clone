@@ -53,8 +53,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for existing purchase using JWT user ID
-    // For document purchases, record in Purchase collection.
-    // For course purchases, we currently just acknowledge success (no storage model provided).
+    // Record both document and course purchases in unified Purchase collection
     if (documentId) {
       const existingPurchase = await Purchase.findOne({
         userId: user._id,
@@ -70,11 +69,16 @@ export async function POST(request: NextRequest) {
       }
 
       // Create new purchase record (document)
+      const paymentIntentId = (checkoutSession.payment_intent && typeof checkoutSession.payment_intent === 'object')
+        ? checkoutSession.payment_intent.id
+        : undefined;
+
       const purchase = new Purchase({
         userId: user._id,
         documentId: documentId,
+        resourceType: 'document',
         stripeSessionId: sessionId,
-        stripePaymentIntentId: checkoutSession.payment_intent?.id,
+        stripePaymentIntentId: paymentIntentId,
         amount: (checkoutSession.amount_total || 0) / 100,
         currency: checkoutSession.currency,
         status: 'completed',
@@ -89,11 +93,42 @@ export async function POST(request: NextRequest) {
         purchase: purchase,
       });
     } else {
-      // Course purchase path: acknowledge success
+      // Course purchase flow stored in Purchase
+      const existingCoursePurchase = await Purchase.findOne({
+        userId: user._id,
+        courseId: courseId,
+      });
+
+      if (existingCoursePurchase) {
+        return NextResponse.json({
+          success: true,
+          message: 'Course already purchased',
+          purchase: existingCoursePurchase,
+        });
+      }
+
+      const paymentIntentId = (checkoutSession.payment_intent && typeof checkoutSession.payment_intent === 'object')
+        ? checkoutSession.payment_intent.id
+        : undefined;
+
+      const purchase = new Purchase({
+        userId: user._id,
+        courseId: courseId,
+        resourceType: 'course',
+        stripeSessionId: sessionId,
+        stripePaymentIntentId: paymentIntentId,
+        amount: (checkoutSession.amount_total || 0) / 100,
+        currency: checkoutSession.currency,
+        status: 'completed',
+        purchaseDate: new Date(),
+      });
+
+      await purchase.save();
+
       return NextResponse.json({
         success: true,
-        message: 'Course payment verified successfully',
-        courseId,
+        message: 'Course purchase recorded successfully',
+        purchase: purchase,
       });
     }
 

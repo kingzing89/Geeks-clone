@@ -32,17 +32,27 @@ export async function GET(request: NextRequest) {
         select: 'title',
       },
     })
+    .populate({
+      path: 'courseId',
+      select: 'title _id',
+    })
     .sort({ purchaseDate: -1 });
 
-    const purchasedDocumentIds = purchases.map(purchase => 
-      purchase.documentId.toString()
-    );
+    const purchasedDocumentIds = purchases
+      .filter(p => p.documentId)
+      .map(p => p.documentId!.toString());
+    const purchasedCourseIds = purchases
+      .filter(p => p.courseId)
+      .map(p => p.courseId!.toString());
+
+    // Note: courses are in the same purchases collection
 
     return NextResponse.json({
       success: true,
       data: {
         purchases: purchases,
         purchasedDocumentIds: purchasedDocumentIds,
+        purchasedCourseIds: purchasedCourseIds,
       },
     });
 
@@ -70,21 +80,45 @@ export async function POST(request: NextRequest) {
     }
 
     const { user } = authResult;
-    const { documentId } = await request.json();
+    const { documentId, courseId } = await request.json();
 
-    const purchase = await Purchase.findOne({
-      userId: user._id, // Use user._id from JWT instead of session.user.id
-      documentId: documentId,
-      status: 'completed',
-    });
+    if (documentId) {
+      const purchase = await Purchase.findOne({
+        userId: user._id,
+        documentId: documentId,
+        status: 'completed',
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          hasPurchased: !!purchase,
+          purchase: purchase,
+          type: 'document',
+        },
+      });
+    }
+
+    if (courseId) {
+      const purchase = await Purchase.findOne({
+        userId: user._id,
+        courseId: courseId,
+        status: 'completed',
+      });
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          hasPurchased: !!purchase,
+          purchase: purchase,
+          type: 'course',
+        },
+      });
+    }
 
     return NextResponse.json({
-      success: true,
-      data: {
-        hasPurchased: !!purchase,
-        purchase: purchase,
-      },
-    });
+      error: 'documentId or courseId is required',
+    }, { status: 400 });
 
   } catch (error) {
     console.error('Check document purchase error:', error);

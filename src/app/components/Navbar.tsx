@@ -388,11 +388,16 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
     }
   };
 
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     setUser(null);
     setShowUserMenu(false);
+    // Reload the page to reset all state
+    window.location.reload();
   };
+
+ 
 
   const getUserDisplayName = () => {
     if (user?.firstName && user?.lastName) {

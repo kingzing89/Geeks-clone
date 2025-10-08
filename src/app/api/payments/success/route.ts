@@ -42,46 +42,60 @@ export async function POST(request: NextRequest) {
     }
 
     const documentId = checkoutSession.metadata?.documentId;
-    if (!documentId) {
+    const courseId = checkoutSession.metadata?.courseId;
+
+    // If neither present, it's an invalid session for our system
+    if (!documentId && !courseId) {
       return NextResponse.json(
-        { error: 'Document ID not found in session' },
+        { error: 'No purchasable resource found in session' },
         { status: 400 }
       );
     }
 
     // Check for existing purchase using JWT user ID
-    const existingPurchase = await Purchase.findOne({
-      userId: user._id, // Use user._id from JWT instead of session.user.id
-      documentId: documentId,
-    });
+    // For document purchases, record in Purchase collection.
+    // For course purchases, we currently just acknowledge success (no storage model provided).
+    if (documentId) {
+      const existingPurchase = await Purchase.findOne({
+        userId: user._id,
+        documentId: documentId,
+      });
 
-    if (existingPurchase) {
+      if (existingPurchase) {
+        return NextResponse.json({
+          success: true,
+          message: 'Document already purchased',
+          purchase: existingPurchase,
+        });
+      }
+
+      // Create new purchase record (document)
+      const purchase = new Purchase({
+        userId: user._id,
+        documentId: documentId,
+        stripeSessionId: sessionId,
+        stripePaymentIntentId: checkoutSession.payment_intent?.id,
+        amount: (checkoutSession.amount_total || 0) / 100,
+        currency: checkoutSession.currency,
+        status: 'completed',
+        purchaseDate: new Date(),
+      });
+
+      await purchase.save();
+
       return NextResponse.json({
         success: true,
-        message: 'Document already purchased',
-        purchase: existingPurchase,
+        message: 'Purchase recorded successfully',
+        purchase: purchase,
+      });
+    } else {
+      // Course purchase path: acknowledge success
+      return NextResponse.json({
+        success: true,
+        message: 'Course payment verified successfully',
+        courseId,
       });
     }
-
-    // Create new purchase record
-    const purchase = new Purchase({
-      userId: user._id, // Use user._id from JWT instead of session.user.id
-      documentId: documentId,
-      stripeSessionId: sessionId,
-      stripePaymentIntentId: checkoutSession.payment_intent?.id,
-      amount: (checkoutSession.amount_total || 0) / 100, // Handle null case and convert from cents
-      currency: checkoutSession.currency,
-      status: 'completed',
-      purchaseDate: new Date(),
-    });
-
-    await purchase.save();
-
-    return NextResponse.json({
-      success: true,
-      message: 'Purchase recorded successfully',
-      purchase: purchase,
-    });
 
   } catch (error) {
     console.error('Payment success handler error:', error);

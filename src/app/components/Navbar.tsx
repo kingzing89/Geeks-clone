@@ -640,11 +640,6 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
                           <p className="text-xs text-slate-500">{user.email}</p>
                         </div>
                         
-                        <Link href="/profile" className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">
-                          <Settings size={16} className="mr-2" />
-                          Profile Settings
-                        </Link>
-                        
                         {user.role === 'ADMIN' && (
                           <Link href="/admin" className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">
                             <Users size={16} className="mr-2" />

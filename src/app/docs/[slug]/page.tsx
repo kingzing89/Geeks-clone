@@ -201,20 +201,18 @@ export default function DocPage({ params }: DocPageProps) {
   };
 
   // Handle payment
+
   const handlePayment = async () => {
     if (!doc) return;
-
-    // Check if user is logged in
+  
     const token = localStorage.getItem("token");
     if (!token) {
       alert("Please login or signup to purchase this documentation.");
-      // Optionally redirect to login page
-      // router.push('/login');
       return;
     }
-
+  
     setIsPaymentLoading(true);
-
+  
     try {
       const response = await fetch("/api/payments/create-checkout-session", {
         method: "POST",
@@ -226,26 +224,22 @@ export default function DocPage({ params }: DocPageProps) {
           priceId: doc.stripePriceId,
           documentId: doc._id,
           documentTitle: doc.title,
-          successUrl: `${window.location.origin}/docs/${doc.slug}?session_id={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${window.location.origin}/docs/${doc.slug}`,
+          documentSlug: doc.slug,  // Pass the slug instead of URLs
         }),
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         
-        // Handle authentication errors specifically
         if (response.status === 401) {
           alert("Your session has expired. Please login again to continue.");
-          localStorage.removeItem("token"); // Clear invalid token
-          // Optionally redirect to login page
-          // router.push('/login');
+          localStorage.removeItem("token");
           return;
         }
         
         throw new Error(errorData.error || "Failed to create checkout session");
       }
-
+  
       const { url } = await response.json();
       if (url) {
         window.location.href = url;
@@ -259,6 +253,7 @@ export default function DocPage({ params }: DocPageProps) {
       setIsPaymentLoading(false);
     }
   };
+
 
   // Handle download
   const handleDownload = async (format: "text" | "html") => {

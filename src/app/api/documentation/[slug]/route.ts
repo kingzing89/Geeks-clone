@@ -4,13 +4,15 @@ import connectDB from '@/lib/mongodb';
 
 export async function GET(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     await connectDB();
     
+    const { slug } = await params;
+    
     const doc = await Documentation.findOne({ 
-      slug: params.slug, 
+      slug: slug, 
       isPublished: true 
     })
       .populate('category', 'title slug bgColor icon')

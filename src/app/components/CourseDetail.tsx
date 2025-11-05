@@ -215,12 +215,10 @@ const CourseDetail: React.FC<CourseDetailProps> = ({ courseId, onBack }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
+       body: JSON.stringify({
           priceId: courseData.stripePriceId,
           courseId: courseData._id,
           courseTitle: courseData.title,
-          successUrl: `${window.location.origin}/courses/${courseId}?session_id={CHECKOUT_SESSION_ID}`,
-          cancelUrl: `${window.location.origin}/courses/${courseId}`,
         }),
       });
 

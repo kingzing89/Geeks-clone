@@ -896,7 +896,7 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
                   />
                 </div>
 
-                {authMode === 'signin' && (
+                {/* {authMode === 'signin' && (
                   <div className="flex items-center justify-between">
                     <button 
                       type="button" 
@@ -906,7 +906,7 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
                       Forgot password?
                     </button>
                   </div>
-                )}
+                )} */}
 
 
                 <button

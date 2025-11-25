@@ -9,6 +9,7 @@ interface NavbarProps {
   onMenuToggle: (isOpen: boolean) => void;
 }
 
+
 interface UserData {
   id: string;
   email: string;
@@ -18,6 +19,8 @@ interface UserData {
   role: 'USER' | 'ADMIN' | 'INSTRUCTOR';
   avatar?: string;
 }
+
+
 
 interface Category {
   _id: string;
@@ -106,6 +109,7 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showTutorialsDropdown, setShowTutorialsDropdown] = useState(false);
   const [showCoursesDropdown, setShowCoursesDropdown] = useState(false);
@@ -113,6 +117,7 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
   const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [isClient, setIsClient] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
@@ -133,6 +138,8 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
     username: '',
     rememberMe: false
   });
+
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
 
   // Default icon mapping for categories
   const getIconForCategory = (categoryTitle: string, iconName?: string) => {
@@ -158,6 +165,61 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
     return iconMap[normalizedTitle] || Code; // Default to Code icon
   };
 
+
+  const openForgotPasswordModal = () => {
+    setShowAuthModal(false); // Close auth modal
+    setShowForgotPasswordModal(true);
+    setError('');
+    setSuccessMessage('');
+    setForgotPasswordEmail('');
+  };
+
+
+  const closeForgotPasswordModal = () => {
+    setShowForgotPasswordModal(false);
+    setError('');
+    setSuccessMessage('');
+    setForgotPasswordEmail('');
+  };
+
+
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    setSuccessMessage('');
+
+    try {
+      const response = await fetch('/api/auth/forget-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: forgotPasswordEmail }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccessMessage('Password reset link sent! Check your email inbox.');
+        setForgotPasswordEmail('');
+        // Auto-close modal after 3 seconds
+        setTimeout(() => {
+          closeForgotPasswordModal();
+          setSuccessMessage('');
+        }, 3000);
+      } else {
+        setError(data.error || 'Failed to send reset link');
+      }
+    } catch (error) {
+      setError('Network error. Please try again.');
+      console.error('Forgot password error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  
   // Get category color - Updated function
   const getCategoryColor = (category: any) => {
     let categoryName: string;
@@ -600,7 +662,7 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
                   <Code className="text-white" size={20} />
                 </div>
                 <span className="ml-2 text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  CodeLearn
+                  TechCodeByte
                 </span>
               </Link>
             </div>
@@ -836,11 +898,16 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
 
                 {authMode === 'signin' && (
                   <div className="flex items-center justify-between">
-                    <button type="button" className="text-sm text-blue-600 hover:underline">
-                      Forgot password
+                    <button 
+                      type="button" 
+                      onClick={openForgotPasswordModal}
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      Forgot password?
                     </button>
                   </div>
                 )}
+
 
                 <button
                   type="submit"
@@ -857,6 +924,87 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
           </div>
         </div>
       )}
+
+{showForgotPasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 relative">
+            <button
+              onClick={closeForgotPasswordModal}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="p-8">
+              {/* Icon and Header */}
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Forgot Password?
+                </h2>
+                <p className="text-gray-600 text-sm">
+                  Enter your email address and we'll send you a link to reset your password.
+                </p>
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+
+              {/* Success Message */}
+              {successMessage && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-600">{successMessage}</p>
+                </div>
+              )}
+
+              {/* Form */}
+              <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={forgotPasswordEmail}
+                    onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Sending...' : 'Send Reset Link'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeForgotPasswordModal();
+                    openAuthModal('signin');
+                  }}
+                  className="w-full text-sm text-gray-600 hover:text-gray-900 py-2"
+                >
+                  ← Back to Sign In
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* Click outside to close user menu */}
       {showUserMenu && (

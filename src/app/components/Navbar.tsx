@@ -142,29 +142,34 @@ export default function Navbar({ onMenuToggle }: NavbarProps) {
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
 
   // Default icon mapping for categories
-  const getIconForCategory = (categoryTitle: string, iconName?: string) => {
-    // If custom icon is provided, you can extend this to handle custom icons
-    const iconMap: { [key: string]: any } = {
-      'algorithms': Code,
-      'data structures': Database,
-      'machine learning': Brain,
-      'artificial intelligence': Brain,
-      'web development': Globe,
-      'system design': Server,
-      'programming': Laptop,
-      'devops': Users,
-      'courses': BookOpen,
-      'database': Database,
-      'javascript': Code,
-      'python': Code,
-      'react': Code,
-      'node.js': Server,
-    };
+  // Default icon mapping for categories
+const getIconForCategory = (categoryTitle: string, iconName?: string) => {
+  // If no category title provided, return default icon immediately
+  if (!categoryTitle || categoryTitle === 'default') {
+    return Code; // Always return a valid icon
+  }
 
-    const normalizedTitle = categoryTitle.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
-    return iconMap[normalizedTitle] || Code; // Default to Code icon
+  const iconMap: { [key: string]: any } = {
+    'algorithms': Code,
+    'data structures': Database,
+    'machine learning': Brain,
+    'artificial intelligence': Brain,
+    'web development': Globe,
+    'system design': Server,
+    'programming': Laptop,
+    'devops': Users,
+    'courses': BookOpen,
+    'database': Database,
+    'javascript': Code,
+    'python': Code,
+    'react': Code,
+    'node.js': Server,
   };
 
+  const normalizedTitle = categoryTitle.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim();
+  return iconMap[normalizedTitle] || Code; // This is correct
+};
+ 
 
   const openForgotPasswordModal = () => {
     setShowAuthModal(false); // Close auth modal

@@ -70,7 +70,7 @@ const CategorySchema = new Schema<ICategory, CategoryModel, ICategoryMethods>({
 
 // Index for better query performance
 CategorySchema.index({ order: 1, isActive: 1 });
-CategorySchema.index({ slug: 1 });
+
 
 // Pre-save middleware to generate slug if not provided
 CategorySchema.pre('save', function(next) {

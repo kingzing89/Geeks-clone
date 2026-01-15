@@ -68,11 +68,11 @@ const PurchaseSchema = new Schema<IPurchase>({
 // Create compound indexes to prevent duplicate purchases per resource type
 PurchaseSchema.index(
   { userId: 1, documentId: 1 },
-  { unique: true, partialFilterExpression: { documentId: { $exists: true } } }
+  { unique: true, partialFilterExpression: { documentId: { $ne: null } } }
 );
 PurchaseSchema.index(
   { userId: 1, courseId: 1 },
-  { unique: true, partialFilterExpression: { courseId: { $exists: true } } }
+  { unique: true, partialFilterExpression: { courseId: { $ne: null } } }
 );
 
 export const Purchase = mongoose.models.Purchase || mongoose.model<IPurchase>('Purchase', PurchaseSchema);

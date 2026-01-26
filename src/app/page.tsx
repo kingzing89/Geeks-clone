@@ -163,12 +163,17 @@ export default function HomePage() {
 
   // Handle search result selection
   const handleSearchResultSelect = (result: SearchResult) => {
-    // Navigate based on result type
+    // Use id instead of slug
+    if (!result.id) {
+      console.error('No id available for result:', result);
+      return;
+    }
+  
     const baseUrl = result.type === 'course' ? '/courses' : 
                    result.type === 'documentation' ? '/docs' : 
                    '/categories';
     
-    window.location.href = `${baseUrl}/${result.slug}`;
+    window.location.href = `${baseUrl}/${result.id}`;
   };
 
   // Handle popular course click

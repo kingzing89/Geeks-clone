@@ -20,7 +20,6 @@ interface CategoryData {
 }
 
 // API function to fetch category data
-// API function to fetch category data
 const getCategoryData = async (slug: string): Promise<CategoryData | null> => {
   try {
     await dbConnect();
@@ -92,7 +91,6 @@ const parseContent = (content?: string) => {
 
 // Helper function to get proper background color class for admin panel colors
 const getBgColorClass = (bgColor?: string) => {
-  // Map admin panel color values to hero section gradients (darker for better text contrast)
   const adminColorMap: { [key: string]: string } = {
     LightBlue: "bg-gradient-to-r from-sky-500 to-blue-600",
     SoftGreen: "bg-gradient-to-r from-green-500 to-emerald-600",
@@ -106,12 +104,10 @@ const getBgColorClass = (bgColor?: string) => {
     SoftTeal: "bg-gradient-to-r from-teal-500 to-cyan-600",
   };
 
-  // Return the mapping if bgColor exists, otherwise return default
   if (bgColor && adminColorMap[bgColor]) {
     return adminColorMap[bgColor];
   }
 
-  // Default fallback
   return "bg-gradient-to-r from-gray-500 to-slate-600";
 };
 
@@ -165,12 +161,14 @@ const getButtonColor = (bgColor?: string) => {
   return "from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700";
 };
 
+// ✅ FIXED: Changed params type to Promise
 export default async function CategoryPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>; // Changed to Promise
 }) {
-  const categoryData = await getCategoryData(params.slug);
+  const { slug } = await params; // ✅ Await params here
+  const categoryData = await getCategoryData(slug); // Use awaited slug
 
   if (!categoryData) {
     notFound();
@@ -311,14 +309,14 @@ export async function generateStaticParams() {
 }
 
 
-// Metadata generation for SEO
-// Metadata generation for SEO
+// ✅ FIXED: Metadata generation
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>; // Changed to Promise
 }) {
-  const categoryData = await getCategoryData(params.slug);
+  const { slug } = await params; // ✅ Await params here
+  const categoryData = await getCategoryData(slug); // Use awaited slug
 
   if (!categoryData) {
     return {

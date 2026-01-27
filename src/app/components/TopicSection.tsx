@@ -18,7 +18,7 @@ interface TopicCard {
   slug: string;
   description?: string;
   content: string;
-  category: CategoryObject; // Updated to handle object structure
+  category: CategoryObject;
   readTime?: string;
   isPublished: boolean;
   createdAt: string;
@@ -27,10 +27,10 @@ interface TopicCard {
 
 interface TopicSectionProps {
   title?: string;
-  category?: string; // Filter by category (optional)
-  limit?: number; // Limit number of cards shown
+  category?: string;
+  limit?: number;
   showViewAll?: boolean;
-  showOnlyPublished?: boolean; // New prop to control published filter
+  showOnlyPublished?: boolean;
   onViewAll?: () => void;
   onCardClick?: (card: TopicCard) => void;
 }
@@ -40,7 +40,7 @@ export default function TopicSection({
   category,
   limit = 4,
   showViewAll = true,
-  showOnlyPublished = true, // Default to showing only published docs
+  showOnlyPublished = true,
   onViewAll,
   onCardClick,
 }: TopicSectionProps) {
@@ -55,7 +55,6 @@ export default function TopicSection({
         setLoading(true);
         setError(null);
         
-        // Build API URL with query parameters
         const params = new URLSearchParams();
         if (category) {
           params.append('category', category);
@@ -107,13 +106,11 @@ export default function TopicSection({
     if (onViewAll) {
       onViewAll();
     } else {
-      // Navigate to docs listing page with category filter
       const categoryParam = category ? `?category=${encodeURIComponent(category)}` : '';
       window.location.href = `/docs${categoryParam}`;
     }
   };
 
-  // Format date for display
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -127,13 +124,9 @@ export default function TopicSection({
     }
   };
 
-
-  // Get category color - Fixed to handle category objects
-
   const getCategoryColor = (category: any) => {
     let categoryName: string;
     
-    // Handle both string and object category formats
     if (typeof category === 'string') {
       categoryName = category;
     } else if (category && typeof category === 'object' && category.title) {
@@ -159,10 +152,6 @@ export default function TopicSection({
     return colors[normalizedCategory] || 'bg-slate-400 hover:bg-slate-500';
   };
 
-
-
-
-  // Helper function to get category display name
   const getCategoryDisplayName = (category: any): string => {
     if (typeof category === 'string') {
       return category;
@@ -174,7 +163,6 @@ export default function TopicSection({
     return 'Uncategorized';
   };
 
-  // Loading state
   if (loading) {
     return (
       <div className="w-full py-8 mx-auto">
@@ -193,7 +181,6 @@ export default function TopicSection({
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="w-full py-8 mx-auto">
@@ -217,7 +204,6 @@ export default function TopicSection({
     );
   }
 
-  // Empty state
   if (cards.length === 0) {
     return (
       <div className="w-full py-8 mx-auto">
@@ -272,16 +258,14 @@ export default function TopicSection({
           const categoryDisplayName = getCategoryDisplayName(card.category);
           
           return (
-            <Link key={card._id} href={`/docs/${card.slug}`}>
+            <Link key={card._id} href={`/docs/${card._id}`}>
               <div
                 onClick={() => handleCardClick(card)}
                 className={`group bg-gradient-to-br ${gradientClasses} text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 text-left relative overflow-hidden cursor-pointer`}
               >
-                {/* Hover overlay */}
                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
 
                 <div className="relative z-10">
-                  {/* Header with category and status */}
                   <div className="flex justify-between items-start mb-3">
                     <span className="text-xs bg-white/20 px-2 py-1 rounded-full font-medium">
                       {categoryDisplayName}
@@ -293,19 +277,16 @@ export default function TopicSection({
                     )}
                   </div>
 
-                  {/* Title */}
                   <h3 className="text-lg font-semibold group-hover:text-white/90 transition-colors mb-2 line-clamp-2">
                     {card.title}
                   </h3>
                   
-                  {/* Description */}
                   {card.description && (
                     <p className="text-sm text-white/80 mb-3 line-clamp-2">
                       {card.description}
                     </p>
                   )}
 
-                  {/* Footer with read time and date */}
                   <div className="flex justify-between items-center">
                     <div className="flex items-center text-xs text-white/70 space-x-3">
                       {card.readTime && (
@@ -331,7 +312,7 @@ export default function TopicSection({
   );
 }
 
-// Pre-configured components for specific use cases
+// Pre-configured components
 export function AllDocsTopicSection() {
   return (
     <TopicSection
@@ -363,7 +344,6 @@ export function RecentDocsSection() {
   );
 }
 
-// Component for admin dashboard (shows drafts too)
 export function AdminDocsSection() {
   return (
     <TopicSection
